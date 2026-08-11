@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CommentRequest;
 use App\Models\Comment;
+use App\Models\Post;
+use App\Notifications\CommentAddedNotification;
+use App\Notifications\CommentRepliedNotification;
 use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,13 +16,24 @@ class CommentController extends Controller
     /**
      * Store a new comment with optional images.
      */
-    public function store(CommentRequest $request)
+    public function index(Request $request, Post $post)
+    {
+        $comments = $post->comments()
+            ->whereNull('parent_comment_id')
+            ->with(['user', 'replies.user', 'images'])
+            ->latest()
+            ->get();
+
+        return response()->json($comments, 200);
+    }
+
+    public function store(CommentRequest $request, Post $post)
     {
         $validated = $request->validated();
 
         $comment = Comment::create([
             'user_id' => Auth::id(),
-            'post_id' => $validated['post_id'],
+            'post_id' => $validated['post_id'] ?? $post->id,
             'parent_comment_id' => $validated['parent_comment_id'] ?? null,
             'content' => $validated['content'],
         ]);
@@ -35,7 +49,20 @@ class CommentController extends Controller
             }
         }
 
-        return response()->json($comment->load(['user', 'images']), 201);
+        $comment->load(['user', 'images']);
+
+        if (empty($validated['parent_comment_id'])) {
+            if ($post->user_id !== Auth::id()) {
+                $post->user->notify(new CommentAddedNotification($post, Auth::user()));
+            }
+        } else {
+            $parent = Comment::find($validated['parent_comment_id']);
+            if ($parent && $parent->user_id !== Auth::id()) {
+                $parent->user->notify(new CommentRepliedNotification($post, Auth::user(), $parent));
+            }
+        }
+
+        return response()->json($comment, 201);
     }
 
     /**

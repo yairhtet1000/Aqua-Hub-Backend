@@ -49,6 +49,11 @@ class Post extends Model
         return $this->belongsToMany(User::class, 'likes');
     }
 
+    public function savedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'saved_posts');
+    }
+
     public function images()
     {
         return $this->hasMany(Image::class);

@@ -19,6 +19,16 @@ class ReportController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('reason', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhere('reportable_type', 'like', "%{$search}%");
+            });
+        }
+
         $reports = $query->latest()->paginate(15);
 
         return response()->json($reports, 200);
@@ -53,6 +63,28 @@ class ReportController extends Controller
 
         return response()->json([
             'message' => 'Reported content has been deleted and report marked as reviewed.',
+            'report' => $report->load(['user', 'reportable']),
+        ], 200);
+    }
+
+    /**
+     * Ban the user who created the reported content.
+     */
+    public function banUser(Report $report)
+    {
+        $reportable = $report->reportable;
+
+        if ($reportable) {
+            $userId = $reportable->user_id ?? null;
+            if ($userId) {
+                \App\Models\User::where('id', $userId)->delete();
+            }
+        }
+
+        $report->update(['status' => 'reviewed']);
+
+        return response()->json([
+            'message' => 'User has been banned and report marked as reviewed.',
             'report' => $report->load(['user', 'reportable']),
         ], 200);
     }

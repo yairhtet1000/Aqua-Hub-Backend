@@ -15,7 +15,16 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 10);
-        $categories = Category::withCount('posts')->paginate($perPage);
+        $query = Category::withCount('posts');
+
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        $categories = $query->paginate($perPage);
 
         return response()->json($categories, 200);
     }

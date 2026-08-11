@@ -15,7 +15,7 @@ class CommentRequest extends FormRequest
     {
         return [
             'content' => 'required|string',
-            'post_id' => 'required|exists:posts,id',
+            'post_id' => 'nullable|exists:posts,id',
             'parent_comment_id' => 'nullable|exists:comments,id',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',

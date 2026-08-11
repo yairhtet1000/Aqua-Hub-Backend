@@ -7,6 +7,7 @@ use App\Models\Image;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -18,36 +19,73 @@ class PostController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
+        if ($search = $request->get('q')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('category', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('tags', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
         $posts = $query->latest()->paginate(10);
 
         return response()->json($posts, 200);
     }
 
-    public function store(PostRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'status' => 'required|in:draft,published,archived',
+            'category_id' => 'required|exists:categories,id',
+            'tank_id' => 'nullable|exists:tanks,id',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        ]);
 
         $post = Post::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'status' => $validated['status'],
-            'category_id' => $validated['category_id'],
-            'tank_id' => $validated['tank_id'] ?? null,
+            'title' => $request->title,
+            'content' => $request->content,
+            'status' => $request->status,
+            'category_id' => $request->category_id,
+            'tank_id' => $request->tank_id ?? null,
             'user_id' => Auth::id(),
         ]);
 
-        if (! empty($validated['tag_ids'])) {
-            $post->tags()->sync($validated['tag_ids']);
+        if (! empty($request->tag_ids)) {
+            $post->tags()->sync($request->tag_ids);
+        }
+
+        $imagePaths = [];
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('posts', 'public');
+            $imagePaths[] = $path;
         }
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
-                $path = $file->store('posts', 'public');
-                Image::create([
-                    'image_path' => $path, // Fixed column name
-                    'post_id' => $post->id,
-                ]);
+                $imagePaths[] = $file->store('posts', 'public');
             }
+        }
+
+        foreach ($imagePaths as $path) {
+            Image::create([
+                'image_path' => $path,
+                'post_id' => $post->id,
+            ]);
         }
 
         return response()->json($post->load(['tags', 'images', 'tank', 'category']), 201);

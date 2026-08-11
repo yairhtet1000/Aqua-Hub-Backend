@@ -96,7 +96,7 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        $user = $request->user()->load('role', 'tanks')->loadCount('posts', 'comments');
+        $user = $request->user()->load('role', 'tanks')->loadCount('posts', 'comments', 'followers', 'following');
 
         return response()->json([
             'user' => $user,

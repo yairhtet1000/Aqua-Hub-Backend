@@ -106,7 +106,7 @@ class UserProfileController extends Controller
 
     public function show($id)
     {
-        $user = User::with('role')->withCount('posts', 'comments')->findOrFail($id);
+        $user = User::with('role')->withCount('posts', 'comments', 'followers', 'following')->findOrFail($id);
 
         return response()->json([
             'user' => $user,

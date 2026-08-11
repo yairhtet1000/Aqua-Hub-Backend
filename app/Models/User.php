@@ -53,6 +53,21 @@ class User extends Authenticatable
         return $this->belongsToMany(Post::class, 'likes');
     }
 
+    public function savedPosts()
+    {
+        return $this->belongsToMany(Post::class, 'saved_posts');
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id');
+    }
+
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id');
+    }
+
     public function getAvatarAttribute($value)
     {
         return $value ? asset('storage/' . ltrim($value, '/')) : null;
