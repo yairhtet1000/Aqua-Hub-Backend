@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory; // 1. Import trait
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes; // 2. Add trait here
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes; // 2. Add trait here
 
     protected $fillable = [
         'name',
@@ -50,5 +51,10 @@ class User extends Authenticatable
     public function likedPosts()
     {
         return $this->belongsToMany(Post::class, 'likes');
+    }
+
+    public function getAvatarAttribute($value)
+    {
+        return $value ? asset('storage/' . ltrim($value, '/')) : null;
     }
 }

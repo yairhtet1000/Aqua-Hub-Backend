@@ -21,4 +21,9 @@ class Image extends Model
     {
         return $this->belongsTo(Comment::class);
     }
+
+    public function getImagePathAttribute($value)
+    {
+        return $value ? asset('storage/' . ltrim($value, '/')) : null;
+    }
 }

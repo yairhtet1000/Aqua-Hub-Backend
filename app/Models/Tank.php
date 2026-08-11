@@ -15,6 +15,8 @@ class Tank extends Model
         'name',
         'volume_gallons',
         'water_type',
+        'temperature',
+        'ph_level',
         'aquascape_style',
         'setup_date',
     ];

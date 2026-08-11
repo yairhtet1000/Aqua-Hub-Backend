@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+
+class UserProfileController extends Controller
+{
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'bio' => 'nullable|string|max:1000',
+            'avatar' => 'nullable',
+            'current_password' => 'nullable|required_with:password|string',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $request->validate([
+                'avatar' => 'file|image|max:2048',
+            ]);
+
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            $validatedData['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        if ($request->filled('password')) {
+            if (! $request->filled('current_password') || ! Hash::check($validatedData['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'The provided current password does not match your current password.',
+                ], 422);
+            }
+
+            $validatedData['password'] = Hash::make($validatedData['password']);
+        } else {
+            unset($validatedData['password'], $validatedData['password_confirmation'], $validatedData['current_password']);
+        }
+
+        $user->update($validatedData);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $user->fresh()->load('role'),
+        ], 200);
+    }
+
+    public function savedPosts(Request $request)
+    {
+        $user = Auth::user();
+
+        $posts = $user->likedPosts()
+            ->with(['user', 'category', 'tags', 'tank', 'images', 'likes'])
+            ->latest()
+            ->paginate(10);
+
+        return response()->json($posts, 200);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'The provided current password does not match your current password.',
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'message' => 'Password updated successfully.',
+            'user' => $user->fresh()->load('role'),
+        ], 200);
+    }
+
+    public function topContributors()
+    {
+        $users = User::with('role')
+            ->withCount('posts', 'comments')
+            ->orderByDesc('posts_count')
+            ->orderByDesc('comments_count')
+            ->limit(10)
+            ->get();
+
+        return response()->json($users, 200);
+    }
+
+    public function show($id)
+    {
+        $user = User::with('role')->withCount('posts', 'comments')->findOrFail($id);
+
+        return response()->json([
+            'user' => $user,
+        ], 200);
+    }
+}

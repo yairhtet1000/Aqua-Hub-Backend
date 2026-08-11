@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PostRequest;
-use App\Models\Post;
 use App\Models\Image;
+use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['user', 'category', 'tags', 'tank', 'images'])
-            ->latest()
-            ->paginate(10);
+        $query = Post::with(['user', 'category', 'tags', 'tank', 'images', 'likes']);
+
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $posts = $query->latest()->paginate(10);
 
         return response()->json($posts, 200);
     }
@@ -33,7 +36,7 @@ class PostController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        if (!empty($validated['tag_ids'])) {
+        if (! empty($validated['tag_ids'])) {
             $post->tags()->sync($validated['tag_ids']);
         }
 
@@ -52,9 +55,36 @@ class PostController extends Controller
 
     public function show(Post $post)
     {
-        // Fixed relation name from 'parentComment' to 'parent'
         $post->load(['user', 'category', 'tags', 'tank', 'images', 'comments.parent', 'comments.user']);
 
         return response()->json($post, 200);
+    }
+
+    public function update(PostRequest $request, Post $post)
+    {
+        if ($post->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validated();
+
+        $post->update($validated);
+
+        if (! empty($validated['tag_ids'])) {
+            $post->tags()->sync($validated['tag_ids']);
+        }
+
+        return response()->json($post->load(['tags', 'images', 'tank', 'category']), 200);
+    }
+
+    public function destroy(Post $post)
+    {
+        if ($post->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $post->delete();
+
+        return response()->json(null, 204);
     }
 }
