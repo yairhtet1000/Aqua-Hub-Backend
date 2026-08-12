@@ -48,14 +48,26 @@ class FollowController extends Controller
 
     public function followers(User $user)
     {
+        $authId = Auth::id();
         $followers = $user->followers()->paginate(20);
+
+        $followers->getCollection()->each(function ($follower) use ($authId) {
+            $follower->is_following = $authId && $follower->id !== $authId
+                ? $follower->followers()->where('follower_id', $authId)->exists()
+                : false;
+        });
 
         return response()->json($followers, 200);
     }
 
     public function following(User $user)
     {
+        $authId = Auth::id();
         $following = $user->following()->paginate(20);
+
+        $following->getCollection()->each(function ($followedUser) use ($authId) {
+            $followedUser->is_following = true;
+        });
 
         return response()->json($following, 200);
     }

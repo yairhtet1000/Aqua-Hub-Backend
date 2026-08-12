@@ -94,14 +94,18 @@ class UserProfileController extends Controller
 
     public function topContributors()
     {
-        $users = User::with('role')
-            ->withCount('posts', 'comments')
-            ->orderByDesc('posts_count')
-            ->orderByDesc('comments_count')
-            ->limit(10)
-            ->get();
+        $contributors = User::withCount(['posts', 'comments'])
+            ->get()
+            ->map(function ($user) {
+                $user->activity_score = $user->posts_count + $user->comments_count;
 
-        return response()->json($users, 200);
+                return $user;
+            })
+            ->sortByDesc('activity_score')
+            ->take(5)
+            ->values();
+
+        return response()->json($contributors);
     }
 
     public function show($id)

@@ -2,18 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\PostRequest;
+use App\Http\Resources\PostResource;
 use App\Models\Image;
 use App\Models\Post;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Post::with(['user', 'category', 'tags', 'tank', 'images', 'likes']);
+        $authId = Auth::id();
+
+        $query = Post::with([
+            'user',
+            'category',
+            'tags',
+            'tank',
+            'images',
+            'likes',
+            'comments',
+            'savedByUsers' => $authId ? fn ($q) => $q->where('user_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+            'user.followers' => $authId ? fn ($q) => $q->where('follower_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+        ]);
 
         if ($request->has('user_id')) {
             $query->where('user_id', $request->user_id);
@@ -37,7 +51,7 @@ class PostController extends Controller
 
         $posts = $query->latest()->paginate(10);
 
-        return response()->json($posts, 200);
+        return PostResource::collection($posts);
     }
 
     public function store(Request $request)
@@ -47,9 +61,10 @@ class PostController extends Controller
             'content' => 'required|string',
             'status' => 'required|in:draft,published,archived',
             'category_id' => 'required|exists:categories,id',
-            'tank_id' => 'nullable|exists:tanks,id',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
+            'tag_names' => 'nullable|array',
+            'tag_names.*' => 'string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
@@ -60,12 +75,21 @@ class PostController extends Controller
             'content' => $request->content,
             'status' => $request->status,
             'category_id' => $request->category_id,
-            'tank_id' => $request->tank_id ?? null,
             'user_id' => Auth::id(),
         ]);
 
         if (! empty($request->tag_ids)) {
             $post->tags()->sync($request->tag_ids);
+        } elseif (! empty($request->tag_names)) {
+            $tagIds = [];
+            foreach ($request->tag_names as $tagName) {
+                $tag = Tag::firstOrCreate(
+                    ['name' => trim($tagName)],
+                    ['slug' => \Illuminate\Support\Str::slug(trim($tagName))]
+                );
+                $tagIds[] = $tag->id;
+            }
+            $post->tags()->sync($tagIds);
         }
 
         $imagePaths = [];
@@ -88,31 +112,91 @@ class PostController extends Controller
             ]);
         }
 
-        return response()->json($post->load(['tags', 'images', 'tank', 'category']), 201);
+        $post->load([
+            'user',
+            'category',
+            'tags',
+            'tank',
+            'images',
+            'comments',
+            'likes',
+            'savedByUsers' => fn ($q) => $q->where('user_id', Auth::id()),
+            'user.followers' => fn ($q) => $q->where('follower_id', Auth::id()),
+        ]);
+
+        return response()->json(new PostResource($post), 201);
     }
 
     public function show(Post $post)
     {
-        $post->load(['user', 'category', 'tags', 'tank', 'images', 'comments.parent', 'comments.user']);
+        $authId = Auth::id();
 
-        return response()->json($post, 200);
+        $post->load([
+            'user',
+            'category',
+            'tags',
+            'tank',
+            'images',
+            'comments',
+            'likes',
+            'savedByUsers' => $authId ? fn ($q) => $q->where('user_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+            'user.followers' => $authId ? fn ($q) => $q->where('follower_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+        ]);
+
+        return response()->json(new PostResource($post));
     }
 
-    public function update(PostRequest $request, Post $post)
+    public function update(Request $request, Post $post)
     {
         if ($post->user_id !== Auth::id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validated();
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'status' => 'required|in:draft,published,archived',
+            'category_id' => 'required|exists:categories,id',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'tag_names' => 'nullable|array',
+            'tag_names.*' => 'string|max:255',
+        ]);
 
-        $post->update($validated);
+        $post->update([
+            'title' => $request->title,
+            'content' => $request->content,
+            'status' => $request->status,
+            'category_id' => $request->category_id,
+        ]);
 
-        if (! empty($validated['tag_ids'])) {
-            $post->tags()->sync($validated['tag_ids']);
+        if (! empty($request->tag_ids)) {
+            $post->tags()->sync($request->tag_ids);
+        } elseif (! empty($request->tag_names)) {
+            $tagIds = [];
+            foreach ($request->tag_names as $tagName) {
+                $tag = Tag::firstOrCreate(
+                    ['name' => trim($tagName)],
+                    ['slug' => \Illuminate\Support\Str::slug(trim($tagName))]
+                );
+                $tagIds[] = $tag->id;
+            }
+            $post->tags()->sync($tagIds);
         }
 
-        return response()->json($post->load(['tags', 'images', 'tank', 'category']), 200);
+        $post->load([
+            'user',
+            'category',
+            'tags',
+            'tank',
+            'images',
+            'comments',
+            'likes',
+            'savedByUsers' => fn ($q) => $q->where('user_id', Auth::id()),
+            'user.followers' => fn ($q) => $q->where('follower_id', Auth::id()),
+        ]);
+
+        return response()->json(new PostResource($post));
     }
 
     public function destroy(Post $post)
