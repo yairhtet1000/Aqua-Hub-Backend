@@ -49,7 +49,30 @@ class PostController extends Controller
             });
         }
 
-        $posts = $query->latest()->paginate(10);
+        if ($category = $request->get('category')) {
+            if ($category !== 'All') {
+                $query->whereHas('category', function ($q) use ($category) {
+                    $q->where('name', $category)->orWhere('id', $category);
+                });
+            }
+        }
+
+        $user = auth('sanctum')->user();
+
+        if ($user) {
+            $followingIds = $user->following()->pluck('users.id')->toArray();
+
+            if (!empty($followingIds)) {
+                $idsString = implode(',', $followingIds);
+                $query->orderByRaw("FIELD(user_id, {$idsString}) DESC, created_at DESC");
+            } else {
+                $query->latest();
+            }
+        } else {
+            $query->latest();
+        }
+
+        $posts = $query->paginate(10);
 
         return PostResource::collection($posts);
     }
@@ -201,12 +224,20 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        if ($post->user_id !== Auth::id()) {
+        if ($post->user_id !== Auth::id() && ! Auth::user()->is_admin) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $post->delete();
+        \DB::transaction(function () use ($post) {
+            $post->tags()->detach();
+            $post->comments()->delete();
+            $post->likes()->delete();
+            $post->savedByUsers()->delete();
+            $post->images()->delete();
 
-        return response()->json(null, 204);
+            $post->delete();
+        });
+
+        return response()->json(['message' => 'Post deleted successfully']);
     }
 }

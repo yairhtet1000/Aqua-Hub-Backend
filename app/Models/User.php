@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Post::class, 'saved_posts');
     }
 
+    public function bookmarkedPosts()
+    {
+        return $this->savedPosts();
+    }
+
     public function followers()
     {
         return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id');
@@ -66,6 +71,11 @@ class User extends Authenticatable
     public function following()
     {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id');
+    }
+
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('users.id', $user->id)->exists();
     }
 
     public function getAvatarAttribute($value)

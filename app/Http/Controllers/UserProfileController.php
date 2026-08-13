@@ -59,8 +59,8 @@ class UserProfileController extends Controller
     {
         $user = Auth::user();
 
-        $posts = $user->likedPosts()
-            ->with(['user', 'category', 'tags', 'tank', 'images', 'likes'])
+        $posts = $user->savedPosts()
+            ->with(['user', 'category', 'tags', 'tank', 'images', 'likes', 'savedByUsers' => fn ($q) => $q->where('user_id', $user->id)])
             ->latest()
             ->paginate(10);
 
@@ -110,7 +110,12 @@ class UserProfileController extends Controller
 
     public function show($id)
     {
+        $authId = Auth::id();
         $user = User::with('role')->withCount('posts', 'comments', 'followers', 'following')->findOrFail($id);
+
+        $user->is_following = $authId && $authId !== $user->id
+            ? $user->followers()->where('follower_id', $authId)->exists()
+            : false;
 
         return response()->json([
             'user' => $user,

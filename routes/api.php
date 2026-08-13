@@ -11,6 +11,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavedPostController;
+use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TankController;
 use App\Http\Controllers\UserProfileController;
@@ -44,8 +45,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('profile', [UserProfileController::class, 'update']);
     Route::post('user/password', [UserProfileController::class, 'updatePassword']);
     Route::get('user/saved-posts', [UserProfileController::class, 'savedPosts']);
-    Route::get('users/{user}', [UserProfileController::class, 'show']);
+    // Keep static user routes before the parameterized profile route.
     Route::get('users/top-contributors', [UserProfileController::class, 'topContributors']);
+    Route::get('users/{user}', [UserProfileController::class, 'show']);
     Route::post('users/{user}/follow', [FollowController::class, 'follow']);
     Route::delete('users/{user}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('users/{user}/followers', [FollowController::class, 'followers']);
@@ -61,6 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('posts/{post}/like', [LikeController::class, 'toggleLike']);
     Route::post('posts/{post}/save', [SavedPostController::class, 'save']);
     Route::delete('posts/{post}/save', [SavedPostController::class, 'unsave']);
+    Route::post('posts/{post}/bookmark', [SavedPostController::class, 'toggle']);
     Route::get('posts/{post}/comments', [CommentController::class, 'index']);
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);
     Route::put('comments/{comment}', [CommentController::class, 'update']);
@@ -69,6 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::get('community-pulse', [StatsController::class, 'pulse']);
 
     /*
     |--------------------------------------------------------------------------
