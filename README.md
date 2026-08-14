@@ -1,58 +1,134 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AquaHub - Laravel Backend API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+AquaHub is a specialized community platform for aquarium enthusiasts. This backend API handles user authentication, post creation, media storage, categorical topic filtering, comments, bookmarks, user follow relationships, top contributor metrics, and community pulse analytics.
 
-## About Laravel
+- **Frontend Repository:** [AquaHub Frontend](https://github.com/yairhtet1000/Aqua-Hub-Frontend.git)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites & Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **PHP:** `^8.1` or `^8.2` (Ensure PHP CLI matches your web server version)
+- **Composer:** `^2.x`
+- **Database:** MySQL / MariaDB (e.g., via Laragon or XAMPP)
+- **Node.js & NPM:** (Optional, for running frontend asset builds if applicable)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Common Setup Issues & Solutions
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. PHP Version Mismatch
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+If you encounter errors like `composer install requires php ^8.x but your system version is 8.y`:
 
-## Agentic Development
+- Verify your CLI PHP version using `php -v`.
+- If using Laragon or XAMPP, ensure your system `PATH` points to the correct PHP version directory.
+- Alternatively, bypass strict platform checks during installation:
+    ```bash
+    composer install --ignore-platform-req=php
+    ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+````
+
+### 2. Composer Dependency & Ext-ZIP / Ext-PDO Errors
+If `composer install` fails due to missing PHP extensions or package conflicts:
+
+Enable required extensions in your `php.ini` file:
+
+```ini
+extension=pdo_mysql
+extension=zip
+extension=fileinfo
+extension=mbstring
+extension=gd
+````
+
+Clear Composer cache and run a platform-agnostic update:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer clear-cache
+composer update --ignore-platform-reqs
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Installation & Setup Instructions
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. **Clone the repository:**
 
-## Code of Conduct
+    ```bash
+    git clone https://github.com/yairhtet1000/Aqua-Hub-Backend.git
+    cd Aqua-Hub-Backend
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+2. **Install PHP dependencies:**
 
-## Security Vulnerabilities
+    ```bash
+    composer install --ignore-platform-reqs
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. **Configure Environment File:**
+    - Copy `.env.example` to `.env`:
+        ```bash
+        cp .env.example .env
+        ```
+    - Open `.env` and set your local MySQL database credentials:
 
-## License
+        ```env
+        DB_CONNECTION=mysql
+        DB_HOST=127.0.0.1
+        DB_PORT=3306
+        DB_DATABASE=aqua_hub
+        DB_USERNAME=root
+        DB_PASSWORD=
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+        APP_URL=http://127.0.0.1:8000
+        FRONTEND_URL=http://localhost:5173
+        ```
+
+4. **Generate Application Key:**
+
+    ```bash
+    php artisan key:generate
+    ```
+
+5. **Database Import / Migration:**
+
+    **Option A (Import database dump):**
+    - Create a MySQL database named `aqua_hub` and import `database.sql`:
+        ```bash
+        mysql -u root -p aqua_hub < database.sql
+        ```
+
+    **Option B (Run fresh migrations & seeders):**
+
+    ```bash
+    php artisan migrate:fresh --seed
+    ```
+
+6. **Create Storage Symlink (Crucial for Avatars & Post Images):**
+
+    ```bash
+    php artisan storage:link
+    ```
+
+7. **Run the Backend Server:**
+    ```bash
+    php artisan serve
+    ```
+
+The API server will run at `http://127.0.0.1:8000`.
+
+---
+
+## Database Setup
+
+1. Create a MySQL database named `aqua_hub` (or update `.env` with your database credentials).
+2. Import the database dump:
+    ```bash
+    mysql -u root -p aqua_hub < database.sql
+    ```
+3. Alternatively, run migrations and seeders:
+    ```bash
+    php artisan migrate --seed
+    ```
