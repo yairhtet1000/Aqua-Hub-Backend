@@ -12,8 +12,8 @@ class StatsController extends Controller
     public function pulse(): JsonResponse
     {
         return response()->json([
-            'active_today' => User::whereHas('posts', fn ($q) => $q->where('created_at', '>=', now()->subDay()))
-                ->orWhereHas('comments', fn ($q) => $q->where('created_at', '>=', now()->subDay()))
+            'active_today' => User::whereHas('posts', fn($q) => $q->where('created_at', '>=', now()->subDay()))
+                ->orWhereHas('comments', fn($q) => $q->where('created_at', '>=', now()->subDay()))
                 ->count(),
             'posts_today' => Post::where('created_at', '>=', now()->subDay())->count(),
             'total_posts' => Post::count(),

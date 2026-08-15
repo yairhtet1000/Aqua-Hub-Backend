@@ -90,7 +90,7 @@ class CommentController extends Controller
     {
         $user = Auth::user();
 
-        if ($comment->user_id !== $user->id && ! in_array($user->role->name ?? '', ['Admin', 'Moderator'])) {
+        if ($comment->user_id !== $user->id && !in_array($user->role->name ?? '', ['Admin', 'Moderator'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

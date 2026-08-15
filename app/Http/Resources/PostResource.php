@@ -29,18 +29,18 @@ class PostResource extends JsonResource
                 'id' => $this->category->id,
                 'name' => $this->category->name,
             ] : null,
-            'tags' => $this->tags->map(fn ($tag) => [
+            'tags' => $this->tags->map(fn($tag) => [
                 'id' => $tag->id,
                 'name' => $tag->name,
             ]),
-            'images' => $this->images->map(fn ($image) => [
+            'images' => $this->images->map(fn($image) => [
                 'id' => $image->id,
                 'image_path' => $image->image_path,
             ]),
-            'likes' => $this->likes->map(fn ($like) => [
+            'likes' => $this->likes->map(fn($like) => [
                 'id' => $like->id,
             ]),
-            'comments' => $this->comments->map(fn ($comment) => [
+            'comments' => $this->comments->map(fn($comment) => [
                 'id' => $comment->id,
             ]),
             'likes_count' => $this->likes->count(),

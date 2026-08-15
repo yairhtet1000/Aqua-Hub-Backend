@@ -25,8 +25,8 @@ class PostController extends Controller
             'images',
             'likes',
             'comments',
-            'savedByUsers' => $authId ? fn ($q) => $q->where('user_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
-            'user.followers' => $authId ? fn ($q) => $q->where('follower_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+            'savedByUsers' => $authId ? fn($q) => $q->where('user_id', $authId) : fn($q) => $q->whereRaw('0 = 1'),
+            'user.followers' => $authId ? fn($q) => $q->where('follower_id', $authId) : fn($q) => $q->whereRaw('0 = 1'),
         ]);
 
         if ($request->has('user_id')) {
@@ -36,16 +36,16 @@ class PostController extends Controller
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('category', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('tags', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('content', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('category', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('tags', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -101,9 +101,9 @@ class PostController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        if (! empty($request->tag_ids)) {
+        if (!empty($request->tag_ids)) {
             $post->tags()->sync($request->tag_ids);
-        } elseif (! empty($request->tag_names)) {
+        } elseif (!empty($request->tag_names)) {
             $tagIds = [];
             foreach ($request->tag_names as $tagName) {
                 $tag = Tag::firstOrCreate(
@@ -143,8 +143,8 @@ class PostController extends Controller
             'images',
             'comments',
             'likes',
-            'savedByUsers' => fn ($q) => $q->where('user_id', Auth::id()),
-            'user.followers' => fn ($q) => $q->where('follower_id', Auth::id()),
+            'savedByUsers' => fn($q) => $q->where('user_id', Auth::id()),
+            'user.followers' => fn($q) => $q->where('follower_id', Auth::id()),
         ]);
 
         return response()->json(new PostResource($post), 201);
@@ -162,8 +162,8 @@ class PostController extends Controller
             'images',
             'comments',
             'likes',
-            'savedByUsers' => $authId ? fn ($q) => $q->where('user_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
-            'user.followers' => $authId ? fn ($q) => $q->where('follower_id', $authId) : fn ($q) => $q->whereRaw('0 = 1'),
+            'savedByUsers' => $authId ? fn($q) => $q->where('user_id', $authId) : fn($q) => $q->whereRaw('0 = 1'),
+            'user.followers' => $authId ? fn($q) => $q->where('follower_id', $authId) : fn($q) => $q->whereRaw('0 = 1'),
         ]);
 
         return response()->json(new PostResource($post));
@@ -193,9 +193,9 @@ class PostController extends Controller
             'category_id' => $request->category_id,
         ]);
 
-        if (! empty($request->tag_ids)) {
+        if (!empty($request->tag_ids)) {
             $post->tags()->sync($request->tag_ids);
-        } elseif (! empty($request->tag_names)) {
+        } elseif (!empty($request->tag_names)) {
             $tagIds = [];
             foreach ($request->tag_names as $tagName) {
                 $tag = Tag::firstOrCreate(
@@ -215,8 +215,8 @@ class PostController extends Controller
             'images',
             'comments',
             'likes',
-            'savedByUsers' => fn ($q) => $q->where('user_id', Auth::id()),
-            'user.followers' => fn ($q) => $q->where('follower_id', Auth::id()),
+            'savedByUsers' => fn($q) => $q->where('user_id', Auth::id()),
+            'user.followers' => fn($q) => $q->where('follower_id', Auth::id()),
         ]);
 
         return response()->json(new PostResource($post));
@@ -224,7 +224,7 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        if ($post->user_id !== Auth::id() && ! Auth::user()->is_admin) {
+        if ($post->user_id !== Auth::id() && !Auth::user()->is_admin) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

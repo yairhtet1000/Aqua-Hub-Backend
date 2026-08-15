@@ -29,7 +29,7 @@ class PostFactory extends Factory
      */
     public function withoutTank(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'tank_id' => null,
         ]);
     }
@@ -39,7 +39,7 @@ class PostFactory extends Factory
      */
     public function published(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'status' => 'published',
         ]);
     }

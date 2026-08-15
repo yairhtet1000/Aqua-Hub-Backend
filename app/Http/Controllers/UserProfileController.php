@@ -36,7 +36,7 @@ class UserProfileController extends Controller
         }
 
         if ($request->filled('password')) {
-            if (! $request->filled('current_password') || ! Hash::check($validatedData['current_password'], $user->password)) {
+            if (!$request->filled('current_password') || !Hash::check($validatedData['current_password'], $user->password)) {
                 return response()->json([
                     'message' => 'The provided current password does not match your current password.',
                 ], 422);
@@ -60,7 +60,7 @@ class UserProfileController extends Controller
         $user = Auth::user();
 
         $posts = $user->savedPosts()
-            ->with(['user', 'category', 'tags', 'tank', 'images', 'likes', 'savedByUsers' => fn ($q) => $q->where('user_id', $user->id)])
+            ->with(['user', 'category', 'tags', 'tank', 'images', 'likes', 'savedByUsers' => fn($q) => $q->where('user_id', $user->id)])
             ->latest()
             ->paginate(10);
 
@@ -76,7 +76,7 @@ class UserProfileController extends Controller
 
         $user = Auth::user();
 
-        if (! Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'The provided current password does not match your current password.',
             ], 422);

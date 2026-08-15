@@ -132,3 +132,4 @@ The API server will run at `http://127.0.0.1:8000`.
     ```bash
     php artisan migrate --seed
     ```
+4. Testing user email and password are saved in `TestUserEmailPassword.txt`.

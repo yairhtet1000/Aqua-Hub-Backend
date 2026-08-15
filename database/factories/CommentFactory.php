@@ -26,7 +26,7 @@ class CommentFactory extends Factory
      */
     public function reply(int $parentCommentId): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'parent_comment_id' => $parentCommentId,
         ]);
     }

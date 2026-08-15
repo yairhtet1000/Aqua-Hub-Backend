@@ -20,7 +20,7 @@ class CategoryController extends Controller
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
@@ -82,7 +82,7 @@ class CategoryController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->role || ! in_array($user->role->name, ['Admin', 'Moderator'])) {
+        if (!$user->role || !in_array($user->role->name, ['Admin', 'Moderator'])) {
             abort(403, 'Only Admin or Moderator can perform this action.');
         }
     }

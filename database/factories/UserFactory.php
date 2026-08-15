@@ -28,7 +28,7 @@ class UserFactory extends Factory
      */
     public function verified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => now(),
         ]);
     }
@@ -38,7 +38,7 @@ class UserFactory extends Factory
      */
     public function member(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'role_id' => Role::where('name', 'Member')->first()?->id ?? 3,
         ]);
     }
@@ -48,7 +48,7 @@ class UserFactory extends Factory
      */
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'role_id' => Role::where('name', 'Admin')->first()?->id ?? 1,
         ]);
     }
